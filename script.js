@@ -381,30 +381,53 @@ document.addEventListener("click", (e) => {
   if (!e.target.closest(".search__field")) closeSuggestions();
 });
 
-els.locBtn.addEventListener("click", () => {
-  closeSuggestions();
-  if (!navigator.geolocation) {
-    setStatus("⚠️ Geolocation is not supported by your browser.", true);
-    return;
+// Geolocation options:
+//  - enableHighAccuracy:false  -> fast network/wifi based location (works indoors)
+//  - timeout:20000             -> allow time for the user to tap "Allow" + get a fix
+//  - maximumAge:300000         -> accept a cached position up to 5 min old (instant)
+const GEO_OPTIONS = {
+  enableHighAccuracy: false,
+  timeout: 20000,
+  maximumAge: 300000,
+};
+
+function geoErrorMessage(err) {
+  switch (err && err.code) {
+    case 1:
+      return "⚠️ Location permission was blocked. Enable it in your browser's site settings, or search a city above.";
+    case 2:
+      return "⚠️ Your location is unavailable right now. Try again, or search a city above.";
+    case 3:
+      return "⏳ Locating took too long. Tap 📍 to try again, or search a city above.";
+    default:
+      return "⚠️ Couldn't get your location. Please search a city above.";
   }
-  setStatus('<span class="spinner"></span> 📍 Finding your location...');
+}
+
+// Shared geolocation routine used by both the button and auto-detect on load.
+function locateMe(isAuto = false) {
+  if (!navigator.geolocation) {
+    if (isAuto) return searchCity("London");
+    return setStatus("⚠️ Geolocation is not supported by your browser.", true);
+  }
+  closeSuggestions();
+  setStatus('<span class="spinner"></span> 📍 Detecting your location...');
+
   navigator.geolocation.getCurrentPosition(
     (pos) => searchCoords(pos.coords.latitude, pos.coords.longitude),
-    () => setStatus("⚠️ Couldn't get your location. Please search by city.", true)
+    (err) => {
+      setStatus(geoErrorMessage(err), true);
+      // On first load only: if nothing is shown yet, fall back to a default
+      // city so the page isn't empty (but keep the message visible briefly).
+      if (isAuto && els.card.hidden) {
+        setTimeout(() => searchCity("London"), 1500);
+      }
+    },
+    GEO_OPTIONS
   );
-});
+}
+
+els.locBtn.addEventListener("click", () => locateMe(false));
 
 // On first visit, try to auto-detect the user's live location.
-// If permission is denied or unavailable, fall back to a default city.
-window.addEventListener("DOMContentLoaded", () => {
-  if (navigator.geolocation) {
-    setStatus('<span class="spinner"></span> 📍 Detecting your location...');
-    navigator.geolocation.getCurrentPosition(
-      (pos) => searchCoords(pos.coords.latitude, pos.coords.longitude),
-      () => searchCity("London"), // user denied or error -> default
-      { timeout: 8000 }
-    );
-  } else {
-    searchCity("London");
-  }
-});
+window.addEventListener("DOMContentLoaded", () => locateMe(true));
