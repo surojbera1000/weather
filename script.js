@@ -123,6 +123,22 @@ async function searchCities(query, count = 6) {
   return data.results || [];
 }
 
+// Remove duplicate places that share the same name + region + country.
+// (Open-Meteo sometimes returns the same city several times.)
+function dedupeCities(results) {
+  const seen = new Set();
+  return results.filter((r) => {
+    const key = [
+      (r.name || "").toLowerCase(),
+      (r.admin1 || "").toLowerCase(),
+      (r.country_code || r.country || "").toLowerCase(),
+    ].join("|");
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 async function geocode(city) {
   const results = await searchCities(city, 1);
   if (results.length === 0) {
@@ -162,6 +178,28 @@ async function reverseGeocode(lat, lon) {
     // Fallback if the reverse-geocode service is unavailable
     return { name: "Your location", admin1: "", country: "", country_code: "" };
   }
+}
+
+// Approximate location from the visitor's IP address (no permission needed).
+// Used as a fallback when the browser's GPS/geolocation is blocked or times out.
+// Uses the free ipwho.is API (HTTPS + CORS, no key required).
+async function ipLocate() {
+  const res = await fetch("https://ipwho.is/");
+  if (!res.ok) throw new Error("IP location failed");
+  const d = await res.json();
+  if (!d || d.success === false || typeof d.latitude !== "number") {
+    throw new Error("IP location failed");
+  }
+  return {
+    latitude: d.latitude,
+    longitude: d.longitude,
+    place: {
+      name: d.city || d.region || "Your area",
+      admin1: d.region || "",
+      country: d.country || "",
+      country_code: d.country_code || "",
+    },
+  };
 }
 
 // --- Rendering ---
@@ -304,9 +342,10 @@ function onInput() {
   acTimer = setTimeout(async () => {
     const myToken = ++acToken;
     try {
-      const results = await searchCities(q, 6);
+      // fetch a few extra, then de-duplicate down to ~6 unique places
+      const results = await searchCities(q, 10);
       if (myToken !== acToken) return; // a newer request superseded this one
-      renderSuggestions(results, q);
+      renderSuggestions(dedupeCities(results).slice(0, 6), q);
     } catch {
       closeSuggestions();
     }
@@ -406,25 +445,38 @@ function geoErrorMessage(err) {
 
 // Shared geolocation routine used by both the button and auto-detect on load.
 function locateMe(isAuto = false) {
-  if (!navigator.geolocation) {
-    if (isAuto) return searchCity("London");
-    return setStatus("⚠️ Geolocation is not supported by your browser.", true);
-  }
   closeSuggestions();
+  if (!navigator.geolocation) {
+    // No GPS support at all -> go straight to IP-based estimate
+    return locateByIP();
+  }
   setStatus('<span class="spinner"></span> 📍 Detecting your location...');
 
   navigator.geolocation.getCurrentPosition(
     (pos) => searchCoords(pos.coords.latitude, pos.coords.longitude),
     (err) => {
-      setStatus(geoErrorMessage(err), true);
-      // On first load only: if nothing is shown yet, fall back to a default
-      // city so the page isn't empty (but keep the message visible briefly).
-      if (isAuto && els.card.hidden) {
-        setTimeout(() => searchCity("London"), 1500);
-      }
+      // Browser location blocked/timed out -> fall back to IP-based estimate
+      locateByIP(geoErrorMessage(err), isAuto);
     },
     GEO_OPTIONS
   );
+}
+
+// Show weather for an approximate location derived from the network/IP.
+async function locateByIP(precedingNote, isAuto = false) {
+  try {
+    setStatus('<span class="spinner"></span> 🌐 Estimating your location from your network...');
+    const { latitude, longitude, place } = await ipLocate();
+    const data = await getWeather(latitude, longitude);
+    render(place, data, true);
+    // Brief info note (not an error) shown above the card
+    setStatus("🌐 Approximate location from your network — tap 📍 to allow GPS for an exact fix.");
+  } catch {
+    setStatus(precedingNote || "⚠️ Couldn't detect your location. Please search a city above.", true);
+    if (isAuto && els.card.hidden) {
+      setTimeout(() => searchCity("London"), 1200);
+    }
+  }
 }
 
 els.locBtn.addEventListener("click", () => locateMe(false));
