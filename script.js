@@ -142,13 +142,36 @@ async function getWeather(lat, lon) {
   return res.json();
 }
 
+// Turn GPS coordinates into a readable place name.
+// Uses the free BigDataCloud reverse-geocode API (no key required).
+async function reverseGeocode(lat, lon) {
+  try {
+    const url =
+      `https://api.bigdatacloud.net/data/reverse-geocode-client` +
+      `?latitude=${lat}&longitude=${lon}&localityLanguage=en`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error();
+    const d = await res.json();
+    return {
+      name: d.city || d.locality || d.principalSubdivision || "Your location",
+      admin1: d.principalSubdivision || "",
+      country: d.countryName || "",
+      country_code: d.countryCode || "",
+    };
+  } catch {
+    // Fallback if the reverse-geocode service is unavailable
+    return { name: "Your location", admin1: "", country: "", country_code: "" };
+  }
+}
+
 // --- Rendering ---
-function render(place, data) {
+function render(place, data, isLive = false) {
   const cur = data.current;
   const info = describe(cur.weather_code);
 
+  const pin = isLive ? "📍 " : "";
   const region = place.admin1 ? `${place.admin1}, ` : "";
-  els.placeName.textContent = `${place.name}`;
+  els.placeName.textContent = `${pin}${place.name}`;
   els.placeTime.textContent = `${region}${place.country || ""}`;
 
   els.mainIcon.textContent = info.icon;
@@ -329,9 +352,11 @@ async function searchCity(city) {
 async function searchCoords(lat, lon) {
   try {
     showLoading();
-    const data = await getWeather(lat, lon);
-    const place = { name: "Your location", admin1: "", country: data.timezone || "" };
-    render(place, data);
+    const [place, data] = await Promise.all([
+      reverseGeocode(lat, lon),
+      getWeather(lat, lon),
+    ]);
+    render(place, data, true);
   } catch (err) {
     setStatus(err.message || "Something went wrong. Try again.", true);
   }
@@ -359,19 +384,27 @@ document.addEventListener("click", (e) => {
 els.locBtn.addEventListener("click", () => {
   closeSuggestions();
   if (!navigator.geolocation) {
-    setStatus("Geolocation is not supported by your browser.", true);
+    setStatus("⚠️ Geolocation is not supported by your browser.", true);
     return;
   }
-  showLoading();
+  setStatus('<span class="spinner"></span> 📍 Finding your location...');
   navigator.geolocation.getCurrentPosition(
     (pos) => searchCoords(pos.coords.latitude, pos.coords.longitude),
-    () => setStatus("Couldn't get your location. Please search by city.", true)
+    () => setStatus("⚠️ Couldn't get your location. Please search by city.", true)
   );
 });
 
-// Load a default city on first visit
+// On first visit, try to auto-detect the user's live location.
+// If permission is denied or unavailable, fall back to a default city.
 window.addEventListener("DOMContentLoaded", () => {
-  els.input.value = "London";
-  searchCity("London");
-  els.input.value = "";
+  if (navigator.geolocation) {
+    setStatus('<span class="spinner"></span> 📍 Detecting your location...');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => searchCoords(pos.coords.latitude, pos.coords.longitude),
+      () => searchCity("London"), // user denied or error -> default
+      { timeout: 8000 }
+    );
+  } else {
+    searchCity("London");
+  }
 });

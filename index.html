@@ -13,7 +13,7 @@
   <div class="app" id="app">
     <header class="header">
       <h1 class="logo">🌤️ Weather Now</h1>
-      <p class="tagline">Live weather for any city in the world</p>
+      <p class="tagline">🌍 Live weather for any city in the world</p>
     </header>
 
     <form class="search" id="searchForm" autocomplete="off">
@@ -22,7 +22,7 @@
           type="text"
           id="cityInput"
           class="search__input"
-          placeholder="Search for a city..."
+          placeholder="🔎 Search for a city..."
           aria-label="City name"
           role="combobox"
           aria-expanded="false"
@@ -34,7 +34,7 @@
       <button type="submit" class="search__btn" aria-label="Search">
         <span class="search__btn-icon">🔍</span>
       </button>
-      <button type="button" id="locBtn" class="search__loc" aria-label="Use my location" title="Use my location">📍</button>
+      <button type="button" id="locBtn" class="search__loc" aria-label="Use my location" title="📍 Use my live location">📍</button>
     </form>
 
     <!-- Status messages -->
@@ -57,15 +57,15 @@
 
       <div class="card__details">
         <div class="detail">
-          <span class="detail__label">Feels like</span>
+          <span class="detail__label">🌡️ Feels like</span>
           <span class="detail__value" id="feels">--°</span>
         </div>
         <div class="detail">
-          <span class="detail__label">Humidity</span>
+          <span class="detail__label">💧 Humidity</span>
           <span class="detail__value" id="humidity">--%</span>
         </div>
         <div class="detail">
-          <span class="detail__label">Wind</span>
+          <span class="detail__label">💨 Wind</span>
           <span class="detail__value" id="wind">-- km/h</span>
         </div>
       </div>
@@ -73,7 +73,7 @@
 
     <!-- Forecast -->
     <section class="forecast" id="forecast" hidden>
-      <h3 class="forecast__title">7-Day Forecast</h3>
+      <h3 class="forecast__title">📅 7-Day Forecast</h3>
       <div class="forecast__grid" id="forecastGrid"></div>
     </section>
 
