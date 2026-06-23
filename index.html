@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weather Now</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="app" id="app">
+    <header class="header">
+      <h1 class="logo">🌤️ Weather Now</h1>
+      <p class="tagline">Live weather for any city in the world</p>
+    </header>
+
+    <form class="search" id="searchForm" autocomplete="off">
+      <input
+        type="text"
+        id="cityInput"
+        class="search__input"
+        placeholder="Search for a city..."
+        aria-label="City name"
+      />
+      <button type="submit" class="search__btn" aria-label="Search">
+        <span class="search__btn-icon">🔍</span>
+      </button>
+      <button type="button" id="locBtn" class="search__loc" aria-label="Use my location" title="Use my location">📍</button>
+    </form>
+
+    <!-- Status messages -->
+    <div class="status" id="status"></div>
+
+    <!-- Main weather card -->
+    <main class="card" id="weatherCard" hidden>
+      <div class="card__top">
+        <div class="card__place">
+          <h2 id="placeName">—</h2>
+          <p id="placeTime">—</p>
+        </div>
+        <div class="card__icon" id="mainIcon">⛅</div>
+      </div>
+
+      <div class="card__temp">
+        <span id="temp">--</span><span class="deg">°C</span>
+      </div>
+      <p class="card__desc" id="desc">—</p>
+
+      <div class="card__details">
+        <div class="detail">
+          <span class="detail__label">Feels like</span>
+          <span class="detail__value" id="feels">--°</span>
+        </div>
+        <div class="detail">
+          <span class="detail__label">Humidity</span>
+          <span class="detail__value" id="humidity">--%</span>
+        </div>
+        <div class="detail">
+          <span class="detail__label">Wind</span>
+          <span class="detail__value" id="wind">-- km/h</span>
+        </div>
+      </div>
+    </main>
+
+    <!-- Forecast -->
+    <section class="forecast" id="forecast" hidden>
+      <h3 class="forecast__title">7-Day Forecast</h3>
+      <div class="forecast__grid" id="forecastGrid"></div>
+    </section>
+
+    <footer class="footer">
+      <p>Data by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> · No API key required</p>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
