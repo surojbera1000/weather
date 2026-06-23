@@ -131,8 +131,18 @@ function windDir(deg) {
 function setStatus(html, isError = false) {
   els.status.innerHTML = html;
   els.status.classList.toggle("error", isError);
+  if (isError) hideSplash();
 }
 function showLoading() { setStatus('<span class="spinner"></span> Loading...'); }
+
+// Hide the animated splash screen once the app is ready (or on error/timeout).
+function hideSplash() {
+  const s = document.getElementById("splash");
+  if (s && !s.classList.contains("hide")) {
+    s.classList.add("hide");
+    setTimeout(() => { if (s.parentNode) s.parentNode.removeChild(s); }, 600);
+  }
+}
 
 function setTheme([c1, c2]) {
   document.body.style.setProperty("--bg-1", c1);
@@ -293,6 +303,7 @@ function render(place, data, isLive = false) {
   els.daily.hidden = false;
   els.details.hidden = false;
   setStatus("");
+  hideSplash();
 }
 
 function renderHourly(hourly, nowIso) {
@@ -619,6 +630,8 @@ document.addEventListener("touchend", () => {
 window.addEventListener("DOMContentLoaded", () => {
   els.autoLocToggle.checked = getAutoLoc();
   applyUnitButtons();
+  // Safety: never let the splash stay forever, even if the network hangs.
+  setTimeout(hideSplash, 7000);
   const last = loadLastView();
   if (getAutoLoc()) locateMe(true);
   else if (last && last.type === "city") searchCity(last.city);
