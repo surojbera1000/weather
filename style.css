@@ -319,6 +319,12 @@ body {
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 
+/* Staggered entrance for content sections on load/refresh */
+@keyframes enterUp {
+  from { opacity: 0; transform: translateY(22px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .current__icon, .ptr.refreshing .ptr__icon { animation: none; }
 }

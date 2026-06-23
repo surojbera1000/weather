@@ -303,6 +303,7 @@ function render(place, data, isLive = false) {
   els.daily.hidden = false;
   els.details.hidden = false;
   setStatus("");
+  animateIn();
   hideSplash();
 }
 
@@ -369,6 +370,23 @@ function renderSun(daily, nowIso) {
 // Re-render the currently shown data (used by the unit toggle)
 function rerender() {
   if (currentPlace && currentData) render(currentPlace, currentData, currentIsLive);
+}
+
+// Smooth staggered entrance for the main sections.
+function animateIn() {
+  const seq = [
+    document.querySelector(".topbar"),
+    els.current,
+    els.hourly,
+    els.daily,
+    els.details,
+  ];
+  seq.forEach((el, i) => {
+    if (!el) return;
+    el.style.animation = "none";
+    void el.offsetWidth; // force reflow so the animation can replay
+    el.style.animation = `enterUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) ${i * 0.09}s both`;
+  });
 }
 
 // ===== Autocomplete =====
