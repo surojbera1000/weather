@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "io.github.surojbera1000.twa",
+      "sha256_cert_fingerprints": [
+        "E8:AD:22:F6:45:70:00:CA:69:3B:E4:2F:07:34:36:2D:CD:63:74:27:D5:7E:6B:4C:09:D6:4D:3E:D4:07:8B:47"
+      ]
+    }
+  }
+]
