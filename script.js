@@ -6,6 +6,7 @@
 const els = {
   form: document.getElementById("searchForm"),
   input: document.getElementById("cityInput"),
+  suggestions: document.getElementById("suggestions"),
   locBtn: document.getElementById("locBtn"),
   status: document.getElementById("status"),
   card: document.getElementById("weatherCard"),
@@ -15,6 +16,7 @@ const els = {
   placeTime: document.getElementById("placeTime"),
   mainIcon: document.getElementById("mainIcon"),
   temp: document.getElementById("temp"),
+  tempBox: document.querySelector(".card__temp"),
   desc: document.getElementById("desc"),
   feels: document.getElementById("feels"),
   humidity: document.getElementById("humidity"),
@@ -58,6 +60,17 @@ function describe(code) {
   return WEATHER[code] || { label: "Unknown", icon: "❓", theme: ["#2b5876", "#4e4376"] };
 }
 
+// Convert a 2-letter ISO country code (e.g. "US") to a flag emoji 🇺🇸
+function flagEmoji(code) {
+  if (!code || code.length !== 2) return "🌍";
+  const A = 0x1f1e6;
+  const base = "A".charCodeAt(0);
+  return String.fromCodePoint(
+    A + (code.toUpperCase().charCodeAt(0) - base),
+    A + (code.toUpperCase().charCodeAt(1) - base)
+  );
+}
+
 function setStatus(html, isError = false) {
   els.status.innerHTML = html;
   els.status.classList.toggle("error", isError);
@@ -67,26 +80,55 @@ function showLoading() {
   setStatus('<span class="spinner"></span>');
 }
 
+// Update the animated gradient colors via CSS variables (keeps the
+// background animation running instead of overriding it).
 function setTheme([c1, c2]) {
-  document.body.style.background = `linear-gradient(135deg, ${c1}, ${c2})`;
+  document.body.style.setProperty("--bg-grad-1", c1);
+  document.body.style.setProperty("--bg-grad-2", c2);
 }
 
 function dayName(dateStr) {
   return new Date(dateStr).toLocaleDateString(undefined, { weekday: "short" });
 }
 
+// Animate the big temperature number counting up/down to the target value.
+function animateTemp(target) {
+  const start = parseInt(els.temp.textContent, 10);
+  const from = Number.isNaN(start) ? target : start;
+  const duration = 600;
+  const t0 = performance.now();
+
+  els.tempBox.classList.remove("pop");
+  // force reflow so the animation can replay
+  void els.tempBox.offsetWidth;
+  els.tempBox.classList.add("pop");
+
+  function step(now) {
+    const p = Math.min((now - t0) / duration, 1);
+    const eased = 1 - Math.pow(1 - p, 3); // ease-out cubic
+    els.temp.textContent = Math.round(from + (target - from) * eased);
+    if (p < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
 // --- API calls ---
-async function geocode(city) {
+async function searchCities(query, count = 6) {
   const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(
-    city
-  )}&count=1&language=en&format=json`;
+    query
+  )}&count=${count}&language=en&format=json`;
   const res = await fetch(url);
   if (!res.ok) throw new Error("Geocoding request failed");
   const data = await res.json();
-  if (!data.results || data.results.length === 0) {
+  return data.results || [];
+}
+
+async function geocode(city) {
+  const results = await searchCities(city, 1);
+  if (results.length === 0) {
     throw new Error(`Couldn't find "${city}". Try another spelling.`);
   }
-  return data.results[0];
+  return results[0];
 }
 
 async function getWeather(lat, lon) {
@@ -105,14 +147,11 @@ function render(place, data) {
   const cur = data.current;
   const info = describe(cur.weather_code);
 
-  // Place name
   const region = place.admin1 ? `${place.admin1}, ` : "";
   els.placeName.textContent = `${place.name}`;
   els.placeTime.textContent = `${region}${place.country || ""}`;
 
-  // Current
   els.mainIcon.textContent = info.icon;
-  els.temp.textContent = Math.round(cur.temperature_2m);
   els.desc.textContent = info.label;
   els.feels.textContent = `${Math.round(cur.apparent_temperature)}°`;
   els.humidity.textContent = `${cur.relative_humidity_2m}%`;
@@ -127,6 +166,7 @@ function render(place, data) {
     const f = describe(d.weather_code[i]);
     const el = document.createElement("div");
     el.className = "fc-day";
+    el.style.animation = `fadeIn 0.4s ease ${i * 0.05}s both`;
     el.innerHTML = `
       <div class="fc-day__name">${i === 0 ? "Today" : dayName(d.time[i])}</div>
       <div class="fc-day__icon">${f.icon}</div>
@@ -140,6 +180,135 @@ function render(place, data) {
   els.card.hidden = false;
   els.forecast.hidden = false;
   setStatus("");
+
+  animateTemp(Math.round(cur.temperature_2m));
+}
+
+// ===== Autocomplete =====
+let acItems = [];      // current suggestion data
+let acIndex = -1;      // highlighted index for keyboard nav
+let acTimer = null;    // debounce timer
+let acToken = 0;       // request token to ignore stale responses
+
+function closeSuggestions() {
+  els.suggestions.hidden = true;
+  els.suggestions.innerHTML = "";
+  els.input.setAttribute("aria-expanded", "false");
+  acItems = [];
+  acIndex = -1;
+}
+
+function highlightMatch(name, query) {
+  const i = name.toLowerCase().indexOf(query.toLowerCase());
+  if (i === -1) return name;
+  const before = name.slice(0, i);
+  const match = name.slice(i, i + query.length);
+  const after = name.slice(i + query.length);
+  return `${before}<mark>${match}</mark>${after}`;
+}
+
+function renderSuggestions(results, query) {
+  acItems = results;
+  acIndex = -1;
+  els.suggestions.innerHTML = "";
+
+  if (results.length === 0) {
+    els.suggestions.innerHTML =
+      '<li class="suggestion--empty">No matching cities</li>';
+    els.suggestions.hidden = false;
+    els.input.setAttribute("aria-expanded", "true");
+    return;
+  }
+
+  results.forEach((r, idx) => {
+    const sub = [r.admin1, r.country].filter(Boolean).join(", ");
+    const li = document.createElement("li");
+    li.className = "suggestion";
+    li.id = `sg-${idx}`;
+    li.setAttribute("role", "option");
+    li.innerHTML = `
+      <span class="suggestion__flag">${flagEmoji(r.country_code)}</span>
+      <span class="suggestion__text">
+        <span class="suggestion__name">${highlightMatch(r.name, query)}</span>
+        <span class="suggestion__sub">${sub}</span>
+      </span>`;
+    li.addEventListener("mousedown", (e) => {
+      // mousedown (not click) so it fires before input blur
+      e.preventDefault();
+      pickSuggestion(idx);
+    });
+    els.suggestions.appendChild(li);
+  });
+
+  els.suggestions.hidden = false;
+  els.input.setAttribute("aria-expanded", "true");
+}
+
+function setActive(idx) {
+  const nodes = els.suggestions.querySelectorAll(".suggestion");
+  nodes.forEach((n) => n.classList.remove("active"));
+  if (idx >= 0 && idx < nodes.length) {
+    nodes[idx].classList.add("active");
+    nodes[idx].scrollIntoView({ block: "nearest" });
+    els.input.setAttribute("aria-activedescendant", `sg-${idx}`);
+  } else {
+    els.input.removeAttribute("aria-activedescendant");
+  }
+}
+
+async function pickSuggestion(idx) {
+  const place = acItems[idx];
+  if (!place) return;
+  els.input.value = place.name;
+  closeSuggestions();
+  try {
+    showLoading();
+    const data = await getWeather(place.latitude, place.longitude);
+    render(place, data);
+  } catch (err) {
+    setStatus(err.message || "Something went wrong. Try again.", true);
+  }
+}
+
+function onInput() {
+  const q = els.input.value.trim();
+  clearTimeout(acTimer);
+  if (q.length < 2) {
+    closeSuggestions();
+    return;
+  }
+  // debounce so we don't fire a request on every keystroke
+  acTimer = setTimeout(async () => {
+    const myToken = ++acToken;
+    try {
+      const results = await searchCities(q, 6);
+      if (myToken !== acToken) return; // a newer request superseded this one
+      renderSuggestions(results, q);
+    } catch {
+      closeSuggestions();
+    }
+  }, 250);
+}
+
+function onKeyDown(e) {
+  if (els.suggestions.hidden) return;
+  const max = acItems.length - 1;
+  if (e.key === "ArrowDown") {
+    e.preventDefault();
+    acIndex = acIndex >= max ? 0 : acIndex + 1;
+    setActive(acIndex);
+  } else if (e.key === "ArrowUp") {
+    e.preventDefault();
+    acIndex = acIndex <= 0 ? max : acIndex - 1;
+    setActive(acIndex);
+  } else if (e.key === "Enter") {
+    if (acIndex >= 0) {
+      e.preventDefault();
+      pickSuggestion(acIndex);
+    }
+  } else if (e.key === "Escape") {
+    closeSuggestions();
+  }
 }
 
 // --- Flows ---
@@ -161,7 +330,6 @@ async function searchCoords(lat, lon) {
   try {
     showLoading();
     const data = await getWeather(lat, lon);
-    // Reverse-friendly label using the forecast timezone
     const place = { name: "Your location", admin1: "", country: data.timezone || "" };
     render(place, data);
   } catch (err) {
@@ -172,10 +340,24 @@ async function searchCoords(lat, lon) {
 // --- Events ---
 els.form.addEventListener("submit", (e) => {
   e.preventDefault();
+  closeSuggestions();
   searchCity(els.input.value);
 });
 
+els.input.addEventListener("input", onInput);
+els.input.addEventListener("keydown", onKeyDown);
+els.input.addEventListener("focus", () => {
+  if (els.input.value.trim().length >= 2 && acItems.length) {
+    els.suggestions.hidden = false;
+  }
+});
+// Close the dropdown when clicking outside the search field
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".search__field")) closeSuggestions();
+});
+
 els.locBtn.addEventListener("click", () => {
+  closeSuggestions();
   if (!navigator.geolocation) {
     setStatus("Geolocation is not supported by your browser.", true);
     return;
@@ -191,4 +373,5 @@ els.locBtn.addEventListener("click", () => {
 window.addEventListener("DOMContentLoaded", () => {
   els.input.value = "London";
   searchCity("London");
+  els.input.value = "";
 });

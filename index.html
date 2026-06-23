@@ -17,13 +17,20 @@
     </header>
 
     <form class="search" id="searchForm" autocomplete="off">
-      <input
-        type="text"
-        id="cityInput"
-        class="search__input"
-        placeholder="Search for a city..."
-        aria-label="City name"
-      />
+      <div class="search__field">
+        <input
+          type="text"
+          id="cityInput"
+          class="search__input"
+          placeholder="Search for a city..."
+          aria-label="City name"
+          role="combobox"
+          aria-expanded="false"
+          aria-autocomplete="list"
+          aria-controls="suggestions"
+        />
+        <ul class="suggestions" id="suggestions" role="listbox" hidden></ul>
+      </div>
       <button type="submit" class="search__btn" aria-label="Search">
         <span class="search__btn-icon">🔍</span>
       </button>
