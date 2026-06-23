@@ -22,6 +22,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 </head>
 <body>
+  <!-- Pull-to-refresh indicator -->
+  <div class="ptr" id="ptr">
+    <span class="ptr__icon" id="ptrIcon">↓</span>
+    <span class="ptr__text" id="ptrText">Pull to refresh</span>
+  </div>
+
   <div class="app" id="app">
     <header class="header">
       <h1 class="logo">🌤️ Weather Now</h1>
@@ -48,6 +54,15 @@
       </button>
       <button type="button" id="locBtn" class="search__loc" aria-label="Use my location" title="📍 Use my live location">📍</button>
     </form>
+
+    <!-- Auto Location toggle -->
+    <div class="autoloc">
+      <span class="autoloc__label">📍 Auto Location</span>
+      <label class="switch" title="Auto-detect my location on startup">
+        <input type="checkbox" id="autoLocToggle" aria-label="Auto Location" />
+        <span class="switch__slider"></span>
+      </label>
+    </div>
 
     <!-- Status messages -->
     <div class="status" id="status"></div>

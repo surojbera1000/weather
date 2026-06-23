@@ -21,7 +21,47 @@ const els = {
   feels: document.getElementById("feels"),
   humidity: document.getElementById("humidity"),
   wind: document.getElementById("wind"),
+  autoLocToggle: document.getElementById("autoLocToggle"),
+  ptr: document.getElementById("ptr"),
+  ptrIcon: document.getElementById("ptrIcon"),
+  ptrText: document.getElementById("ptrText"),
 };
+
+// ===== Persistence (localStorage) =====
+const STORE = {
+  autoLoc: "wn_autoloc", // "1" / "0"
+  last: "wn_last", // JSON of the last successful view
+};
+
+function getAutoLoc() {
+  // default ON when no preference has been saved yet
+  try {
+    return localStorage.getItem(STORE.autoLoc) !== "0";
+  } catch {
+    return true;
+  }
+}
+function setAutoLoc(on) {
+  try {
+    localStorage.setItem(STORE.autoLoc, on ? "1" : "0");
+  } catch {}
+}
+
+// Remember the most recent successful view so we can refresh / restore it.
+let lastView = null;
+function rememberView(view) {
+  lastView = view;
+  try {
+    localStorage.setItem(STORE.last, JSON.stringify(view));
+  } catch {}
+}
+function loadLastView() {
+  try {
+    return JSON.parse(localStorage.getItem(STORE.last));
+  } catch {
+    return null;
+  }
+}
 
 // Map WMO weather codes -> { label, icon, theme }
 // https://open-meteo.com/en/docs (weather variable documentation)
@@ -381,6 +421,7 @@ async function searchCity(city) {
     const place = await geocode(city.trim());
     const data = await getWeather(place.latitude, place.longitude);
     render(place, data);
+    rememberView({ type: "city", city: city.trim() });
   } catch (err) {
     els.card.hidden = true;
     els.forecast.hidden = true;
@@ -396,9 +437,20 @@ async function searchCoords(lat, lon) {
       getWeather(lat, lon),
     ]);
     render(place, data, true);
+    rememberView({ type: "coords", lat, lon });
   } catch (err) {
     setStatus(err.message || "Something went wrong. Try again.", true);
   }
+}
+
+// Re-run whatever is currently shown (used by pull-to-refresh).
+async function refresh() {
+  const view = lastView || loadLastView();
+  if (view && view.type === "city") return searchCity(view.city);
+  if (view && view.type === "coords") return searchCoords(view.lat, view.lon);
+  // nothing shown yet -> behave like a fresh load
+  if (getAutoLoc()) return locateMe(false);
+  return searchCity("London");
 }
 
 // --- Events ---
@@ -469,6 +521,7 @@ async function locateByIP(precedingNote, isAuto = false) {
     const { latitude, longitude, place } = await ipLocate();
     const data = await getWeather(latitude, longitude);
     render(place, data, true);
+    rememberView({ type: "coords", lat: latitude, lon: longitude });
     // Brief info note (not an error) shown above the card
     setStatus("🌐 Approximate location from your network — tap 📍 to allow GPS for an exact fix.");
   } catch {
@@ -481,5 +534,107 @@ async function locateByIP(precedingNote, isAuto = false) {
 
 els.locBtn.addEventListener("click", () => locateMe(false));
 
-// On first visit, try to auto-detect the user's live location.
-window.addEventListener("DOMContentLoaded", () => locateMe(true));
+// ===== Auto Location toggle =====
+els.autoLocToggle.checked = getAutoLoc();
+els.autoLocToggle.addEventListener("change", () => {
+  setAutoLoc(els.autoLocToggle.checked);
+  if (els.autoLocToggle.checked) {
+    // turned ON -> detect location right away
+    locateMe(false);
+  } else {
+    setStatus("📍 Auto Location is off. Search a city or tap 📍 anytime.");
+  }
+});
+
+// ===== Pull-to-refresh (swipe down at the top) =====
+const PTR_TRIGGER = 65; // px of pull needed to trigger a refresh
+const PTR_MAX = 90; // max visual pull distance
+let ptrStartY = 0;
+let ptrPull = 0;
+let ptrTracking = false;
+let ptrRefreshing = false;
+
+function atTop() {
+  return (window.scrollY || document.documentElement.scrollTop || 0) <= 0;
+}
+
+function ptrReset() {
+  els.ptr.classList.add("snapping");
+  els.ptr.classList.remove("ready");
+  els.ptr.style.transform = "translateY(-60px)";
+  els.ptr.style.opacity = "0";
+  setTimeout(() => els.ptr.classList.remove("snapping"), 260);
+}
+
+document.addEventListener(
+  "touchstart",
+  (e) => {
+    if (ptrRefreshing || !atTop() || e.touches.length !== 1) {
+      ptrTracking = false;
+      return;
+    }
+    ptrStartY = e.touches[0].clientY;
+    ptrTracking = true;
+    ptrPull = 0;
+  },
+  { passive: true }
+);
+
+document.addEventListener(
+  "touchmove",
+  (e) => {
+    if (!ptrTracking || ptrRefreshing) return;
+    const dy = e.touches[0].clientY - ptrStartY;
+    if (dy <= 0 || !atTop()) {
+      // scrolling up or not at top -> cancel
+      if (ptrPull > 0) ptrReset();
+      ptrTracking = false;
+      return;
+    }
+    ptrPull = Math.min(dy * 0.5, PTR_MAX);
+    els.ptr.classList.remove("snapping");
+    els.ptr.style.transform = `translateY(${ptrPull - 50}px)`;
+    els.ptr.style.opacity = String(Math.min(ptrPull / PTR_TRIGGER, 1));
+    const ready = ptrPull >= PTR_TRIGGER;
+    els.ptr.classList.toggle("ready", ready);
+    els.ptrText.textContent = ready ? "Release to refresh" : "Pull to refresh";
+  },
+  { passive: true }
+);
+
+document.addEventListener("touchend", () => {
+  if (!ptrTracking || ptrRefreshing) return;
+  ptrTracking = false;
+  if (ptrPull >= PTR_TRIGGER) {
+    ptrRefreshing = true;
+    els.ptr.classList.add("refreshing", "snapping");
+    els.ptr.classList.remove("ready");
+    els.ptr.style.transform = "translateY(10px)";
+    els.ptr.style.opacity = "1";
+    els.ptrText.textContent = "Refreshing…";
+    Promise.resolve(refresh()).finally(() => {
+      ptrRefreshing = false;
+      els.ptr.classList.remove("refreshing");
+      els.ptrText.textContent = "Pull to refresh";
+      ptrReset();
+    });
+  } else {
+    ptrReset();
+  }
+});
+
+// ===== Startup =====
+window.addEventListener("DOMContentLoaded", () => {
+  els.autoLocToggle.checked = getAutoLoc();
+  const last = loadLastView();
+  if (getAutoLoc()) {
+    // Auto Location ON -> detect live location
+    locateMe(true);
+  } else if (last && last.type === "city") {
+    searchCity(last.city);
+  } else if (last && last.type === "coords") {
+    searchCoords(last.lat, last.lon);
+  } else {
+    searchCity("London");
+  }
+});
