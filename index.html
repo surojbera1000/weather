@@ -7,8 +7,8 @@
 
   <!-- PWA / installable app -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <meta name="theme-color" content="#2980b9" />
-  <meta name="description" content="Live weather and 7-day forecast for any city in the world." />
+  <meta name="theme-color" content="#1f2d52" />
+  <meta name="description" content="Live weather, hourly &amp; 7-day forecast for any city in the world." />
   <link rel="icon" type="image/png" href="favicon-64.png" />
   <link rel="apple-touch-icon" href="icon-192.png" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -29,83 +29,132 @@
   </div>
 
   <div class="app" id="app">
-    <header class="header">
-      <h1 class="logo">🌤️ Weather Now</h1>
-      <p class="tagline">🌍 Live weather for any city in the world</p>
+    <!-- Top bar -->
+    <header class="topbar">
+      <div class="topbar__place">
+        <h1 class="topbar__name" id="placeName">—</h1>
+        <p class="topbar__sub" id="placeTime">—</p>
+      </div>
+      <div class="topbar__actions">
+        <button type="button" class="iconbtn" id="searchToggle" aria-label="Search city" title="Search">🔍</button>
+        <button type="button" class="iconbtn" id="locBtn" aria-label="Use my location" title="My location">📍</button>
+        <button type="button" class="iconbtn" id="settingsToggle" aria-label="Settings" title="Settings">⚙️</button>
+      </div>
     </header>
 
-    <form class="search" id="searchForm" autocomplete="off">
-      <div class="search__field">
-        <input
-          type="text"
-          id="cityInput"
-          class="search__input"
-          placeholder="🔎 Search for a city..."
-          aria-label="City name"
-          role="combobox"
-          aria-expanded="false"
-          aria-autocomplete="list"
-          aria-controls="suggestions"
-        />
-        <ul class="suggestions" id="suggestions" role="listbox" hidden></ul>
-      </div>
-      <button type="submit" class="search__btn" aria-label="Search">
-        <span class="search__btn-icon">🔍</span>
-      </button>
-      <button type="button" id="locBtn" class="search__loc" aria-label="Use my location" title="📍 Use my live location">📍</button>
-    </form>
+    <!-- Search panel (toggled) -->
+    <div class="panel" id="searchPanel" hidden>
+      <form class="search" id="searchForm" autocomplete="off">
+        <div class="search__field">
+          <input
+            type="text"
+            id="cityInput"
+            class="search__input"
+            placeholder="🔎 Search for a city..."
+            aria-label="City name"
+            role="combobox"
+            aria-expanded="false"
+            aria-autocomplete="list"
+            aria-controls="suggestions"
+          />
+          <ul class="suggestions" id="suggestions" role="listbox" hidden></ul>
+        </div>
+        <button type="submit" class="search__btn" aria-label="Search">🔍</button>
+      </form>
+    </div>
 
-    <!-- Auto Location toggle -->
-    <div class="autoloc">
-      <span class="autoloc__label">📍 Auto Location</span>
-      <label class="switch" title="Auto-detect my location on startup">
-        <input type="checkbox" id="autoLocToggle" aria-label="Auto Location" />
-        <span class="switch__slider"></span>
-      </label>
+    <!-- Settings panel (toggled) -->
+    <div class="panel" id="settingsPanel" hidden>
+      <div class="row">
+        <span class="row__label">📍 Auto Location</span>
+        <label class="switch" title="Auto-detect my location on startup">
+          <input type="checkbox" id="autoLocToggle" aria-label="Auto Location" />
+          <span class="switch__slider"></span>
+        </label>
+      </div>
+      <div class="row">
+        <span class="row__label">🌡️ Temperature unit</span>
+        <div class="unit" id="unitToggle" role="group" aria-label="Temperature unit">
+          <button type="button" class="unit__btn is-active" data-unit="c">°C</button>
+          <button type="button" class="unit__btn" data-unit="f">°F</button>
+        </div>
+      </div>
     </div>
 
     <!-- Status messages -->
     <div class="status" id="status"></div>
 
-    <!-- Main weather card -->
-    <main class="card" id="weatherCard" hidden>
-      <div class="card__top">
-        <div class="card__place">
-          <h2 id="placeName">—</h2>
-          <p id="placeTime">—</p>
+    <!-- Current summary -->
+    <section class="current" id="current" hidden>
+      <div class="current__left">
+        <div class="current__temp"><span id="temp">--</span><span class="current__deg" id="unitLabel">°C</span></div>
+        <div class="current__desc" id="desc">—</div>
+      </div>
+      <div class="current__icon" id="mainIcon">⛅</div>
+    </section>
+
+    <!-- Hourly forecast -->
+    <section class="hourly" id="hourly" hidden>
+      <div class="hourly__track" id="hourlyTrack"></div>
+    </section>
+
+    <!-- 7-day forecast -->
+    <section class="daily" id="daily" hidden>
+      <div class="daily__list" id="dailyList"></div>
+    </section>
+
+    <!-- Details -->
+    <section class="details" id="details" hidden>
+      <h3 class="section-title">Details</h3>
+
+      <!-- Sunrise / sunset arc -->
+      <div class="sun">
+        <svg class="sun__svg" viewBox="0 0 320 132" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <linearGradient id="sunFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="rgba(255,255,255,0.20)" />
+              <stop offset="1" stop-color="rgba(255,255,255,0)" />
+            </linearGradient>
+          </defs>
+          <path d="M16,116 A 144,96 0 0 1 304,116 Z" fill="url(#sunFill)" />
+          <path d="M16,116 A 144,96 0 0 1 304,116" fill="none"
+                stroke="rgba(255,255,255,0.85)" stroke-width="2" stroke-dasharray="5 7" />
+          <line x1="8" y1="116" x2="312" y2="116" stroke="rgba(255,255,255,0.45)" stroke-width="1.5" />
+          <circle id="sunDot" cx="16" cy="116" r="7" fill="#ffd24a" />
+        </svg>
+        <div class="sun__times">
+          <span class="sun__time">🌅 <span id="sunrise">--:--</span></span>
+          <span class="sun__time"><span id="sunset">--:--</span> 🌇</span>
         </div>
-        <div class="card__icon" id="mainIcon">⛅</div>
       </div>
 
-      <div class="card__temp">
-        <span id="temp">--</span><span class="deg">°C</span>
+      <!-- Detail metrics -->
+      <div class="metrics">
+        <div class="metric">
+          <div class="metric__icon">🌡️</div>
+          <div class="metric__label">Sensible</div>
+          <div class="metric__value" id="sensible">--°</div>
+        </div>
+        <div class="metric">
+          <div class="metric__icon">💧</div>
+          <div class="metric__label">Humidity</div>
+          <div class="metric__value" id="humidity">--%</div>
+        </div>
+        <div class="metric">
+          <div class="metric__icon">🧭</div>
+          <div class="metric__label">Wind</div>
+          <div class="metric__value" id="wind">--</div>
+        </div>
+        <div class="metric">
+          <div class="metric__icon">📊</div>
+          <div class="metric__label">Pressure</div>
+          <div class="metric__value" id="pressure">-- hPa</div>
+        </div>
       </div>
-      <p class="card__desc" id="desc">—</p>
-
-      <div class="card__details">
-        <div class="detail">
-          <span class="detail__label">🌡️ Feels like</span>
-          <span class="detail__value" id="feels">--°</span>
-        </div>
-        <div class="detail">
-          <span class="detail__label">💧 Humidity</span>
-          <span class="detail__value" id="humidity">--%</span>
-        </div>
-        <div class="detail">
-          <span class="detail__label">💨 Wind</span>
-          <span class="detail__value" id="wind">-- km/h</span>
-        </div>
-      </div>
-    </main>
-
-    <!-- Forecast -->
-    <section class="forecast" id="forecast" hidden>
-      <h3 class="forecast__title">📅 7-Day Forecast</h3>
-      <div class="forecast__grid" id="forecastGrid"></div>
     </section>
 
     <footer class="footer">
-      <p>Data by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> · No API key required</p>
+      <p>Data by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a></p>
     </footer>
   </div>
 
