@@ -8,6 +8,32 @@
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
 }
 
+/* Light theme overrides */
+body.theme-light {
+  --bg-1: #e8f0fa;
+  --bg-2: #c8ddf2;
+  --card-bg: rgba(255, 255, 255, 0.55);
+  --card-border: rgba(0, 0, 0, 0.10);
+  --text: #1a2030;
+  --text-dim: rgba(30, 40, 60, 0.60);
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.10);
+}
+body.theme-light .switch__slider { background: rgba(0, 0, 0, 0.15); border-color: rgba(0, 0, 0, 0.12); }
+body.theme-light .switch__slider::before { background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2); }
+body.theme-light .switch input:checked + .switch__slider { background: #34c759; }
+body.theme-light .iconbtn { background: rgba(0, 0, 0, 0.05); border-color: rgba(0, 0, 0, 0.10); color: var(--text); }
+body.theme-light .search__input { background: rgba(255, 255, 255, 0.7); border-color: rgba(0, 0, 0, 0.12); color: var(--text); }
+body.theme-light .search__input::placeholder { color: var(--text-dim); }
+body.theme-light .search__btn { background: rgba(0, 0, 0, 0.06); border-color: rgba(0, 0, 0, 0.1); color: var(--text); }
+body.theme-light .suggestions { background: rgba(255, 255, 255, 0.96); border-color: rgba(0, 0, 0, 0.1); }
+body.theme-light .suggestion:hover, body.theme-light .suggestion.active { background: rgba(0, 0, 0, 0.06); }
+body.theme-light .suggestion__name mark { color: #d07000; }
+body.theme-light .unit__btn { color: var(--text-dim); }
+body.theme-light .unit__btn.is-active { background: rgba(0, 0, 0, 0.09); color: var(--text); }
+body.theme-light .unit { border-color: rgba(0, 0, 0, 0.12); }
+body.theme-light .ptr { color: var(--text); }
+body.theme-light .footer a { color: var(--text); }
+
 * {
   margin: 0;
   padding: 0;

@@ -18,6 +18,7 @@ const els = {
   suggestions: document.getElementById("suggestions"),
   autoLocToggle: document.getElementById("autoLocToggle"),
   unitToggle: document.getElementById("unitToggle"),
+  themeToggle: document.getElementById("themeToggle"),
   // status
   status: document.getElementById("status"),
   // current
@@ -283,7 +284,7 @@ function render(place, data, isLive = false) {
   els.unitLabel.textContent = unitText();
   els.desc.textContent = info.label;
   els.mainIcon.textContent = iconFor(cur.weather_code, cur.is_day);
-  setTheme(info.theme);
+  applyTheme(cur.weather_code);
 
   // Hourly (next 24h starting from the current hour)
   renderHourly(data.hourly, cur.time);
@@ -596,6 +597,91 @@ els.unitToggle.addEventListener("click", (e) => {
   rerender();
 });
 
+// ===== Theme (Dark / Light / Auto) =====
+function getThemePref() {
+  try { return localStorage.getItem("wn_theme") || "auto"; } catch { return "auto"; }
+}
+function setThemePref(v) {
+  try { localStorage.setItem("wn_theme", v); } catch {}
+}
+let themePref = getThemePref();
+
+// Light-mode weather-based colors (soft pastels).
+const WEATHER_LIGHT = {
+  0:  ["#d4ecff", "#a6d5f7"],
+  1:  ["#d4ecff", "#a6d5f7"],
+  2:  ["#dce4ef", "#b8cade"],
+  3:  ["#d0d5dc", "#abb5c2"],
+  45: ["#d8dde3", "#b5bcc5"],
+  48: ["#d8dde3", "#b5bcc5"],
+  51: ["#c8daf0", "#9bb8d9"],
+  53: ["#c8daf0", "#9bb8d9"],
+  55: ["#b8cde6", "#8fb0d0"],
+  56: ["#b8cde6", "#8fb0d0"],
+  57: ["#b8cde6", "#8fb0d0"],
+  61: ["#bacce5", "#8fb0d3"],
+  63: ["#afc4de", "#88a8c8"],
+  65: ["#a3b9d4", "#7a9dbd"],
+  66: ["#a3b9d4", "#7a9dbd"],
+  67: ["#a3b9d4", "#7a9dbd"],
+  71: ["#e4eaf4", "#c4d1e5"],
+  73: ["#e4eaf4", "#c4d1e5"],
+  75: ["#e4eaf4", "#c4d1e5"],
+  77: ["#e4eaf4", "#c4d1e5"],
+  80: ["#bacce5", "#8fb0d3"],
+  81: ["#afc4de", "#88a8c8"],
+  82: ["#a3b9d4", "#7a9dbd"],
+  85: ["#e4eaf4", "#c4d1e5"],
+  86: ["#e4eaf4", "#c4d1e5"],
+  95: ["#bcc2d0", "#97a0b4"],
+  96: ["#bcc2d0", "#97a0b4"],
+  99: ["#bcc2d0", "#97a0b4"],
+};
+
+function resolveEffectiveTheme() {
+  if (themePref === "dark") return "dark";
+  if (themePref === "light") return "light";
+  // auto: use OS / browser setting
+  return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+}
+
+function applyTheme(weatherCode) {
+  const effective = resolveEffectiveTheme();
+  document.body.classList.toggle("theme-light", effective === "light");
+
+  // Pick weather-based gradient
+  if (effective === "light") {
+    const c = WEATHER_LIGHT[weatherCode] || ["#e8f0fa", "#c8ddf2"];
+    document.body.style.setProperty("--bg-1", c[0]);
+    document.body.style.setProperty("--bg-2", c[1]);
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute("content", c[1]);
+  } else {
+    const info = describe(weatherCode !== undefined ? weatherCode : 0);
+    setTheme(info.theme);
+  }
+}
+
+function applyThemeButtons() {
+  els.themeToggle.querySelectorAll(".unit__btn").forEach((b) => {
+    b.classList.toggle("is-active", b.dataset.theme === themePref);
+  });
+}
+applyThemeButtons();
+els.themeToggle.addEventListener("click", (e) => {
+  const btn = e.target.closest(".unit__btn");
+  if (!btn || !btn.dataset.theme) return;
+  themePref = btn.dataset.theme;
+  setThemePref(themePref);
+  applyThemeButtons();
+  rerender();
+});
+
+// Listen for OS theme changes when in "auto" mode
+window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => {
+  if (themePref === "auto") rerender();
+});
+
 // ===== Pull-to-refresh =====
 const PTR_TRIGGER = 65;
 const PTR_MAX = 90;
@@ -649,6 +735,8 @@ document.addEventListener("touchend", () => {
 window.addEventListener("DOMContentLoaded", () => {
   els.autoLocToggle.checked = getAutoLoc();
   applyUnitButtons();
+  applyThemeButtons();
+  applyTheme(); // apply theme immediately (before weather loads)
   // Safety: never let the splash stay forever, even if the network hangs.
   setTimeout(hideSplash, 7000);
   const last = loadLastView();
