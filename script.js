@@ -33,6 +33,7 @@ const els = {
   // daily
   daily: document.getElementById("daily"),
   dailyList: document.getElementById("dailyList"),
+  forecastBtn: document.getElementById("forecastBtn"),
   // details
   details: document.getElementById("details"),
   sunDot: document.getElementById("sunDot"),
@@ -189,6 +190,9 @@ function loadLastView() {
 let currentPlace = null;
 let currentData = null;
 let currentIsLive = false;
+let forecastDays = 7; // 7 or 16
+let currentLat = null;
+let currentLon = null;
 
 // ===== API =====
 async function searchCities(query, count = 6) {
@@ -218,12 +222,13 @@ async function geocode(city) {
   if (results.length === 0) throw new Error(`Couldn't find "${city}". Try another spelling.`);
   return results[0];
 }
-async function getWeather(lat, lon) {
+async function getWeather(lat, lon, days = 7) {
   const url =
     `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
     `&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure,is_day` +
     `&hourly=temperature_2m,weather_code,is_day` +
     `&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset` +
+    `&forecast_days=${days}` +
     `&timezone=auto`;
   const res = await fetch(url);
   if (!res.ok) throw new Error("Weather request failed");
@@ -292,6 +297,15 @@ function render(place, data, isLive = false) {
 
   // Daily list (from tomorrow onward)
   renderDaily(data.daily);
+
+  // Show/update the 15-day button
+  if (forecastDays <= 7) {
+    els.forecastBtn.textContent = "📅 See 15-day forecast";
+    els.forecastBtn.hidden = false;
+  } else {
+    els.forecastBtn.textContent = "📅 Show 7-day forecast";
+    els.forecastBtn.hidden = false;
+  }
 
   // Details
   els.sensible.textContent = tStr(cur.apparent_temperature);
@@ -591,7 +605,10 @@ async function pickSuggestion(idx) {
   closeSuggestions();
   try {
     showLoading();
-    const data = await getWeather(place.latitude, place.longitude);
+    forecastDays = 7;
+    currentLat = place.latitude;
+    currentLon = place.longitude;
+    const data = await getWeather(place.latitude, place.longitude, forecastDays);
     render(place, data);
     rememberView({ type: "coords", lat: place.latitude, lon: place.longitude });
   } catch (err) {
@@ -625,8 +642,11 @@ async function searchCity(city) {
   if (!city || !city.trim()) return;
   try {
     showLoading();
+    forecastDays = 7; // reset to 7 on new search
     const place = await geocode(city.trim());
-    const data = await getWeather(place.latitude, place.longitude);
+    currentLat = place.latitude;
+    currentLon = place.longitude;
+    const data = await getWeather(place.latitude, place.longitude, forecastDays);
     render(place, data);
     rememberView({ type: "city", city: city.trim() });
   } catch (err) {
@@ -636,7 +656,10 @@ async function searchCity(city) {
 async function searchCoords(lat, lon) {
   try {
     showLoading();
-    const [place, data] = await Promise.all([reverseGeocode(lat, lon), getWeather(lat, lon)]);
+    forecastDays = 7; // reset to 7 on new search
+    currentLat = lat;
+    currentLon = lon;
+    const [place, data] = await Promise.all([reverseGeocode(lat, lon), getWeather(lat, lon, forecastDays)]);
     render(place, data, true);
     rememberView({ type: "coords", lat, lon });
   } catch (err) {
@@ -711,6 +734,19 @@ document.addEventListener("click", (e) => {
 });
 
 els.locBtn.addEventListener("click", () => locateMe(false));
+
+// 15-day forecast toggle button
+els.forecastBtn.addEventListener("click", async () => {
+  if (!currentLat || !currentLon || !currentPlace) return;
+  try {
+    forecastDays = forecastDays <= 7 ? 16 : 7;
+    showLoading();
+    const data = await getWeather(currentLat, currentLon, forecastDays);
+    render(currentPlace, data, currentIsLive);
+  } catch (err) {
+    setStatus(err.message || "Something went wrong. Try again.", true);
+  }
+});
 
 // Auto Location toggle
 els.autoLocToggle.checked = getAutoLoc();
