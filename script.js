@@ -285,6 +285,7 @@ function render(place, data, isLive = false) {
   els.desc.textContent = info.label;
   els.mainIcon.textContent = iconFor(cur.weather_code, cur.is_day);
   applyTheme(cur.weather_code);
+  applyVfx(cur.weather_code);
 
   // Hourly (next 24h starting from the current hour)
   renderHourly(data.hourly, cur.time);
@@ -372,6 +373,144 @@ function renderSun(daily, nowIso) {
 // Re-render the currently shown data (used by the unit toggle)
 function rerender() {
   if (currentPlace && currentData) render(currentPlace, currentData, currentIsLive);
+}
+
+// ===== Weather Visual Effects =====
+const vfxEl = document.getElementById("vfx");
+let vfxType = null; // track current effect to avoid re-creating unnecessarily
+let lightningTimer = null;
+
+function clearVfx() {
+  vfxEl.innerHTML = "";
+  vfxType = null;
+  if (lightningTimer) { clearInterval(lightningTimer); lightningTimer = null; }
+}
+
+function createRain(heavy = false) {
+  const count = heavy ? 80 : 45;
+  for (let i = 0; i < count; i++) {
+    const drop = document.createElement("div");
+    drop.className = heavy ? "rain-drop heavy" : "rain-drop";
+    drop.style.left = `${Math.random() * 100}%`;
+    drop.style.height = `${12 + Math.random() * 18}px`;
+    drop.style.animationDuration = `${0.5 + Math.random() * 0.5}s`;
+    drop.style.animationDelay = `${Math.random() * 2}s`;
+    drop.style.opacity = `${0.3 + Math.random() * 0.5}`;
+    vfxEl.appendChild(drop);
+  }
+}
+
+function createSnow() {
+  for (let i = 0; i < 50; i++) {
+    const flake = document.createElement("div");
+    flake.className = "snow-flake";
+    flake.style.left = `${Math.random() * 100}%`;
+    const size = 3 + Math.random() * 6;
+    flake.style.width = `${size}px`;
+    flake.style.height = `${size}px`;
+    flake.style.animationDuration = `${4 + Math.random() * 6}s`;
+    flake.style.animationDelay = `${Math.random() * 5}s`;
+    flake.style.opacity = `${0.4 + Math.random() * 0.5}`;
+    vfxEl.appendChild(flake);
+  }
+}
+
+function createSunGlow() {
+  const glow = document.createElement("div");
+  glow.className = "sun-glow";
+  vfxEl.appendChild(glow);
+  const ray = document.createElement("div");
+  ray.className = "sun-ray";
+  vfxEl.appendChild(ray);
+}
+
+function createClouds(count = 3) {
+  for (let i = 0; i < count; i++) {
+    const cloud = document.createElement("div");
+    cloud.className = "cloud-drift";
+    cloud.textContent = "☁";
+    cloud.style.top = `${10 + Math.random() * 40}%`;
+    cloud.style.animationDuration = `${20 + Math.random() * 25}s`;
+    cloud.style.animationDelay = `${Math.random() * 15}s`;
+    cloud.style.fontSize = `${2 + Math.random() * 2}rem`;
+    cloud.style.opacity = `${0.12 + Math.random() * 0.12}`;
+    vfxEl.appendChild(cloud);
+  }
+}
+
+function createLightning() {
+  // Random flashes every 3–8 seconds
+  lightningTimer = setInterval(() => {
+    if (Math.random() > 0.5) return;
+    const flash = document.createElement("div");
+    flash.className = "lightning-flash";
+    vfxEl.appendChild(flash);
+    setTimeout(() => flash.remove(), 200);
+  }, 3000 + Math.random() * 5000);
+}
+
+function createFog() {
+  for (let i = 0; i < 3; i++) {
+    const fog = document.createElement("div");
+    fog.className = "fog-layer";
+    fog.style.top = `${20 + i * 25}%`;
+    fog.style.animationDelay = `${i * 3}s`;
+    fog.style.opacity = `${0.5 + Math.random() * 0.3}`;
+    vfxEl.appendChild(fog);
+  }
+}
+
+function applyVfx(code) {
+  // Determine effect type from WMO code
+  let type = "none";
+  if (code === 0 || code === 1) type = "sun";
+  else if (code === 2) type = "sun-cloud";
+  else if (code === 3) type = "cloud";
+  else if (code === 45 || code === 48) type = "fog";
+  else if (code >= 51 && code <= 57) type = "drizzle";
+  else if (code >= 61 && code <= 67) type = "rain";
+  else if (code >= 71 && code <= 77) type = "snow";
+  else if (code >= 80 && code <= 82) type = "rain";
+  else if (code >= 85 && code <= 86) type = "snow";
+  else if (code >= 95) type = "storm";
+
+  if (type === vfxType) return; // same effect, no need to recreate
+  clearVfx();
+  vfxType = type;
+
+  switch (type) {
+    case "sun":
+      createSunGlow();
+      break;
+    case "sun-cloud":
+      createSunGlow();
+      createClouds(2);
+      break;
+    case "cloud":
+      createClouds(4);
+      break;
+    case "fog":
+      createFog();
+      createClouds(2);
+      break;
+    case "drizzle":
+      createRain(false);
+      createClouds(2);
+      break;
+    case "rain":
+      createRain(true);
+      createClouds(3);
+      break;
+    case "snow":
+      createSnow();
+      createClouds(2);
+      break;
+    case "storm":
+      createRain(true);
+      createLightning();
+      createClouds(3);
+      break;
+  }
 }
 
 // Smooth staggered entrance for the main sections.
