@@ -48,39 +48,40 @@ const els = {
 };
 
 // Map WMO weather codes -> { label, icon, theme }
+// Themes are dark / near-black with a subtle weather-based tint.
 const WEATHER = {
-  0:  { label: "Clear sky",            icon: "☀️", theme: ["#3a6ea5", "#1b3a5b"] },
-  1:  { label: "Mainly clear",         icon: "🌤️", theme: ["#3a6ea5", "#1b3a5b"] },
-  2:  { label: "Partly cloudy",        icon: "⛅", theme: ["#41597f", "#22304f"] },
-  3:  { label: "Overcast",             icon: "☁️", theme: ["#4a566b", "#262f42"] },
-  45: { label: "Fog",                  icon: "🌫️", theme: ["#525c69", "#2a313c"] },
-  48: { label: "Rime fog",             icon: "🌫️", theme: ["#525c69", "#2a313c"] },
-  51: { label: "Light drizzle",        icon: "🌦️", theme: ["#3d5273", "#202d49"] },
-  53: { label: "Drizzle",              icon: "🌦️", theme: ["#3d5273", "#202d49"] },
-  55: { label: "Heavy drizzle",        icon: "🌧️", theme: ["#3d5273", "#202d49"] },
-  56: { label: "Freezing drizzle",     icon: "🌧️", theme: ["#3d5273", "#202d49"] },
-  57: { label: "Freezing drizzle",     icon: "🌧️", theme: ["#3d5273", "#202d49"] },
-  61: { label: "Light rain",           icon: "🌦️", theme: ["#34465f", "#1a2438"] },
-  63: { label: "Rain",                 icon: "🌧️", theme: ["#34465f", "#1a2438"] },
-  65: { label: "Heavy rain",           icon: "🌧️", theme: ["#2a3a50", "#141d30"] },
-  66: { label: "Freezing rain",        icon: "🌧️", theme: ["#2a3a50", "#141d30"] },
-  67: { label: "Freezing rain",        icon: "🌧️", theme: ["#2a3a50", "#141d30"] },
-  71: { label: "Light snow",           icon: "🌨️", theme: ["#5a6b85", "#2c3850"] },
-  73: { label: "Snow",                 icon: "❄️", theme: ["#5a6b85", "#2c3850"] },
-  75: { label: "Heavy snow",           icon: "❄️", theme: ["#5a6b85", "#2c3850"] },
-  77: { label: "Snow grains",          icon: "🌨️", theme: ["#5a6b85", "#2c3850"] },
-  80: { label: "Rain showers",         icon: "🌦️", theme: ["#34465f", "#1a2438"] },
-  81: { label: "Rain showers",         icon: "🌧️", theme: ["#34465f", "#1a2438"] },
-  82: { label: "Violent showers",      icon: "⛈️", theme: ["#2a3a50", "#141d30"] },
-  85: { label: "Snow showers",         icon: "🌨️", theme: ["#5a6b85", "#2c3850"] },
-  86: { label: "Snow showers",         icon: "❄️", theme: ["#5a6b85", "#2c3850"] },
-  95: { label: "Thunderstorm",         icon: "⛈️", theme: ["#33384a", "#191d2b"] },
-  96: { label: "Thunderstorm + hail",  icon: "⛈️", theme: ["#33384a", "#191d2b"] },
-  99: { label: "Thunderstorm + hail",  icon: "⛈️", theme: ["#33384a", "#191d2b"] },
+  0:  { label: "Clear sky",            icon: "☀️", theme: ["#1a2742", "#05080f"] },
+  1:  { label: "Mainly clear",         icon: "🌤️", theme: ["#1a2742", "#05080f"] },
+  2:  { label: "Partly cloudy",        icon: "⛅", theme: ["#1c2230", "#06070b"] },
+  3:  { label: "Overcast",             icon: "☁️", theme: ["#20242c", "#070809"] },
+  45: { label: "Fog",                  icon: "🌫️", theme: ["#23272d", "#08090b"] },
+  48: { label: "Rime fog",             icon: "🌫️", theme: ["#23272d", "#08090b"] },
+  51: { label: "Light drizzle",        icon: "🌦️", theme: ["#161f2c", "#04060b"] },
+  53: { label: "Drizzle",              icon: "🌦️", theme: ["#161f2c", "#04060b"] },
+  55: { label: "Heavy drizzle",        icon: "🌧️", theme: ["#141d2a", "#04060a"] },
+  56: { label: "Freezing drizzle",     icon: "🌧️", theme: ["#141d2a", "#04060a"] },
+  57: { label: "Freezing drizzle",     icon: "🌧️", theme: ["#141d2a", "#04060a"] },
+  61: { label: "Light rain",           icon: "🌦️", theme: ["#121a26", "#03050a"] },
+  63: { label: "Rain",                 icon: "🌧️", theme: ["#111824", "#03050a"] },
+  65: { label: "Heavy rain",           icon: "🌧️", theme: ["#0e1420", "#020407"] },
+  66: { label: "Freezing rain",        icon: "🌧️", theme: ["#0e1420", "#020407"] },
+  67: { label: "Freezing rain",        icon: "🌧️", theme: ["#0e1420", "#020407"] },
+  71: { label: "Light snow",           icon: "🌨️", theme: ["#222a36", "#080b10"] },
+  73: { label: "Snow",                 icon: "❄️", theme: ["#222a36", "#080b10"] },
+  75: { label: "Heavy snow",           icon: "❄️", theme: ["#222a36", "#080b10"] },
+  77: { label: "Snow grains",          icon: "🌨️", theme: ["#222a36", "#080b10"] },
+  80: { label: "Rain showers",         icon: "🌦️", theme: ["#121a26", "#03050a"] },
+  81: { label: "Rain showers",         icon: "🌧️", theme: ["#111824", "#03050a"] },
+  82: { label: "Violent showers",      icon: "⛈️", theme: ["#0e1420", "#020407"] },
+  85: { label: "Snow showers",         icon: "🌨️", theme: ["#222a36", "#080b10"] },
+  86: { label: "Snow showers",         icon: "❄️", theme: ["#222a36", "#080b10"] },
+  95: { label: "Thunderstorm",         icon: "⛈️", theme: ["#161720", "#040406"] },
+  96: { label: "Thunderstorm + hail",  icon: "⛈️", theme: ["#161720", "#040406"] },
+  99: { label: "Thunderstorm + hail",  icon: "⛈️", theme: ["#161720", "#040406"] },
 };
 
 function describe(code) {
-  return WEATHER[code] || { label: "Unknown", icon: "❓", theme: ["#2b3f6b", "#1b2747"] };
+  return WEATHER[code] || { label: "Unknown", icon: "❓", theme: ["#161b2b", "#05070d"] };
 }
 
 // Pick an icon, swapping to night variants when it isn't daytime.
