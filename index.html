@@ -133,19 +133,21 @@
     <!-- Settings panel (toggled) -->
     <div class="panel" id="settingsPanel" hidden>
       <div class="row">
-        <span class="row__label">📍 Auto Location</span>
-        <label class="switch" title="Auto-detect my location on startup">
-          <input type="checkbox" id="autoLocToggle" aria-label="Auto Location" />
-          <span class="switch__slider"></span>
-        </label>
-      </div>
-      <div class="row">
         <span class="row__label">🌡️ Temperature unit</span>
         <div class="unit" id="unitToggle" role="group" aria-label="Temperature unit">
           <button type="button" class="unit__btn is-active" data-unit="c">°C</button>
           <button type="button" class="unit__btn" data-unit="f">°F</button>
         </div>
       </div>
+    </div>
+
+    <!-- Auto Location toggle (always visible) -->
+    <div class="autoloc-bar">
+      <span class="autoloc-bar__label">📍 Auto Location</span>
+      <label class="switch" title="Auto-detect my location on startup">
+        <input type="checkbox" id="autoLocToggle" aria-label="Auto Location" />
+        <span class="switch__slider"></span>
+      </label>
     </div>
 
     <!-- Status messages -->
