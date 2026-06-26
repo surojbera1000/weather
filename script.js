@@ -47,6 +47,14 @@ const els = {
   ptr: document.getElementById("ptr"),
   ptrIcon: document.getElementById("ptrIcon"),
   ptrText: document.getElementById("ptrText"),
+  // greeting
+  greeting: document.getElementById("greeting"),
+  greetEmoji: document.getElementById("greetEmoji"),
+  greetText: document.getElementById("greetText"),
+  // tip
+  tipCard: document.getElementById("tipCard"),
+  tipIcon: document.getElementById("tipIcon"),
+  tipText: document.getElementById("tipText"),
 };
 
 // Map WMO weather codes -> { label, icon, theme }
@@ -308,11 +316,15 @@ function render(place, data, isLive = false) {
   }
 
   // Details
-  els.sensible.textContent = tStr(cur.apparent_temperature);
+  els.sensible.textContent = `${tStr(cur.apparent_temperature)} ${feelsDescription(cur.apparent_temperature, cur.relative_humidity_2m)}`;
   els.humidity.textContent = `${cur.relative_humidity_2m}%`;
   els.wind.textContent = `${windDir(cur.wind_direction_10m)}, ${beaufort(cur.wind_speed_10m)}`;
   els.pressure.textContent = `${Math.round(cur.surface_pressure)} hPa`;
   renderSun(data.daily, cur.time);
+
+  // Greeting + Tip
+  renderGreeting();
+  renderTip(cur.weather_code, cur.temperature_2m, cur.relative_humidity_2m, cur.wind_speed_10m);
 
   // Reveal sections
   els.current.hidden = false;
@@ -542,6 +554,101 @@ function animateIn() {
     void el.offsetWidth; // force reflow so the animation can replay
     el.style.animation = `enterUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) ${i * 0.09}s both`;
   });
+}
+
+// ===== Greeting (time-based) =====
+function renderGreeting() {
+  const h = new Date().getHours();
+  let emoji, text;
+  if (h >= 5 && h < 12) { emoji = "🌅"; text = "Good morning!"; }
+  else if (h >= 12 && h < 17) { emoji = "☀️"; text = "Good afternoon!"; }
+  else if (h >= 17 && h < 21) { emoji = "🌇"; text = "Good evening!"; }
+  else { emoji = "🌙"; text = "Good night!"; }
+  els.greetEmoji.textContent = emoji;
+  els.greetText.textContent = text;
+  els.greeting.hidden = false;
+}
+
+// ===== Weather Tips (based on conditions) =====
+const TIPS = {
+  hot: [
+    "🥤 Stay hydrated! Drink water every 30 minutes in this heat.",
+    "🧴 Don't forget sunscreen — UV rays are strong today.",
+    "🏠 Try to stay indoors during peak hours (12–3 PM).",
+    "🍉 Eat water-rich fruits like watermelon to stay cool.",
+  ],
+  cold: [
+    "🧥 Layer up! Multiple thin layers keep you warmer than one thick one.",
+    "☕ A warm drink can help maintain your body temperature.",
+    "🧤 Don't forget your extremities — wear gloves and warm socks.",
+  ],
+  rain: [
+    "☂️ Keep an umbrella handy — rain is expected!",
+    "🚗 Roads may be slippery. Drive carefully.",
+    "👟 Wear waterproof shoes to keep your feet dry.",
+    "⚡ Stay away from open areas during lightning.",
+  ],
+  snow: [
+    "❄️ Roads may be icy — walk carefully and drive slow.",
+    "🧣 Cover your nose and mouth to warm the air you breathe.",
+    "📱 Cold drains batteries faster — keep your phone warm.",
+  ],
+  wind: [
+    "💨 Strong winds today! Secure any loose outdoor items.",
+    "🚲 Cycling may be difficult — consider alternate transport.",
+    "👒 Hold onto your hat — it's a windy one!",
+  ],
+  nice: [
+    "😎 Perfect weather for a walk or outdoor activity!",
+    "🌳 Great day to spend time in nature.",
+    "📸 Beautiful sky today — great for photos!",
+    "🧘 The weather is calm — perfect for outdoor meditation.",
+  ],
+  humid: [
+    "💦 High humidity today — you'll sweat more, so drink extra water.",
+    "👕 Wear light, breathable clothing today.",
+    "🏃 Best to exercise early morning or late evening today.",
+  ],
+  storm: [
+    "⛈️ Thunderstorm alert! Stay indoors if possible.",
+    "🔌 Unplug electronics during lightning storms.",
+    "🚫 Avoid tall trees and open fields during a storm.",
+  ],
+};
+
+function getWeatherTip(code, temp, humidity, wind) {
+  let category = "nice";
+  if (code >= 95) category = "storm";
+  else if (code >= 71 && code <= 77 || code >= 85 && code <= 86) category = "snow";
+  else if (code >= 51 && code <= 67 || code >= 80 && code <= 82) category = "rain";
+  else if (wind > 40) category = "wind";
+  else if (temp > 35) category = "hot";
+  else if (temp < 5) category = "cold";
+  else if (humidity > 80 && temp > 25) category = "humid";
+  const tips = TIPS[category] || TIPS.nice;
+  // Pick a tip based on the day so it changes daily but stays consistent
+  const dayIndex = new Date().getDate() % tips.length;
+  return tips[dayIndex];
+}
+
+function renderTip(code, temp, humidity, wind) {
+  const tip = getWeatherTip(code, temp, humidity, wind);
+  // Choose icon based on tip content
+  els.tipIcon.textContent = tip.charAt(0);
+  els.tipText.textContent = tip.slice(2).trim();
+  els.tipCard.hidden = false;
+}
+
+// ===== "Feels like" description =====
+function feelsDescription(apparentTemp, humidity) {
+  if (apparentTemp > 40) return "🔥 Extremely hot";
+  if (apparentTemp > 35) return "🥵 Very hot & humid";
+  if (apparentTemp > 30) return "☀️ Hot";
+  if (apparentTemp > 25) return "🌤️ Warm";
+  if (apparentTemp > 18) return "😊 Comfortable";
+  if (apparentTemp > 10) return "🧥 Cool";
+  if (apparentTemp > 0) return "🥶 Cold";
+  return "❄️ Freezing";
 }
 
 // ===== Autocomplete =====

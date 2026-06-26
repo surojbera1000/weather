@@ -33,59 +33,110 @@
       justify-content: center;
       gap: 16px;
       background: linear-gradient(160deg, #161b2b, #05070d);
-      transition: opacity 0.6s ease, visibility 0.6s ease;
+      transition: opacity 0.7s ease, visibility 0.7s ease;
       font-family: "Poppins", system-ui, sans-serif;
       color: #fff;
+      overflow: hidden;
     }
     #splash.hide { opacity: 0; visibility: hidden; }
-    #splash.hide .splash__logo { animation: none; transform: scale(1.6); opacity: 0; }
-    #splash.hide .splash__title,
-    #splash.hide .splash__dots { opacity: 0; transform: translateY(-8px); }
+    #splash.hide .splash__logo { animation: none; transform: scale(2) rotate(15deg); opacity: 0; }
+    #splash.hide .splash__title { opacity: 0; transform: translateY(-12px); }
+    #splash.hide .splash__dots { opacity: 0; }
+    #splash.hide .splash__particles { opacity: 0; }
+
+    .splash__particles {
+      position: absolute; inset: 0; overflow: hidden;
+      transition: opacity 0.5s ease;
+    }
+    .splash__particle {
+      position: absolute;
+      width: 4px; height: 4px;
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 50%;
+      animation: particleFloat 3s ease-in-out infinite;
+    }
+    @keyframes particleFloat {
+      0%, 100% { transform: translateY(0) scale(1); opacity: 0.3; }
+      50% { transform: translateY(-30px) scale(1.5); opacity: 0.8; }
+    }
+
+    .splash__wave {
+      position: absolute;
+      bottom: 0; left: -50%;
+      width: 200%; height: 120px;
+      background: rgba(100, 160, 255, 0.08);
+      border-radius: 45% 55% 0 0;
+      animation: waveMove 3s ease-in-out infinite;
+    }
+    .splash__wave:nth-child(2) {
+      animation-delay: 0.8s;
+      background: rgba(100, 200, 255, 0.06);
+      bottom: -20px;
+    }
+    @keyframes waveMove {
+      0%, 100% { transform: translateX(0) scaleY(1); }
+      50% { transform: translateX(3%) scaleY(1.2); }
+    }
+
     .splash__logo {
-      font-size: 4.5rem;
+      font-size: 5rem;
       line-height: 1;
-      animation: splashFloat 1.8s ease-in-out infinite;
-      filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.3));
-      transition: transform 0.6s ease, opacity 0.6s ease;
+      animation: splashFloat 2s ease-in-out infinite;
+      filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.4));
+      transition: transform 0.7s ease, opacity 0.7s ease;
+      z-index: 2;
     }
     .splash__title {
-      font-size: 1.4rem;
+      font-size: 1.6rem;
       font-weight: 600;
-      letter-spacing: 0.5px;
+      letter-spacing: 1px;
       opacity: 0;
-      animation: splashFadeUp 0.7s ease 0.15s forwards;
+      animation: splashFadeUp 0.8s ease 0.2s forwards;
       transition: opacity 0.5s ease, transform 0.5s ease;
+      z-index: 2;
     }
-    .splash__dots { display: flex; gap: 8px; transition: opacity 0.5s ease, transform 0.5s ease; }
+    .splash__subtitle {
+      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.6);
+      opacity: 0;
+      animation: splashFadeUp 0.8s ease 0.5s forwards;
+      z-index: 2;
+    }
+    .splash__dots { display: flex; gap: 8px; z-index: 2; transition: opacity 0.5s ease; }
     .splash__dots span {
-      width: 9px; height: 9px; border-radius: 50%;
+      width: 10px; height: 10px; border-radius: 50%;
       background: rgba(255, 255, 255, 0.85);
       animation: splashBounce 1.2s ease-in-out infinite;
     }
     .splash__dots span:nth-child(2) { animation-delay: 0.18s; }
     .splash__dots span:nth-child(3) { animation-delay: 0.36s; }
     @keyframes splashFloat {
-      0%, 100% { transform: translateY(0) rotate(-4deg); }
-      50% { transform: translateY(-14px) rotate(4deg); }
+      0%, 100% { transform: translateY(0) rotate(-3deg) scale(1); }
+      50% { transform: translateY(-16px) rotate(3deg) scale(1.05); }
     }
     @keyframes splashFadeUp {
-      from { opacity: 0; transform: translateY(10px); }
+      from { opacity: 0; transform: translateY(14px); }
       to { opacity: 1; transform: translateY(0); }
     }
     @keyframes splashBounce {
-      0%, 100% { transform: translateY(0); opacity: 0.5; }
-      50% { transform: translateY(-9px); opacity: 1; }
+      0%, 100% { transform: translateY(0); opacity: 0.4; }
+      50% { transform: translateY(-10px); opacity: 1; }
     }
     @media (prefers-reduced-motion: reduce) {
-      .splash__logo, .splash__dots span { animation: none; }
+      .splash__logo, .splash__dots span, .splash__particle, .splash__wave { animation: none; }
     }
   </style>
 </head>
 <body>
-  <!-- Animated splash screen (fades out once weather is loaded) -->
+  <!-- Animated splash screen -->
   <div id="splash">
+    <div class="splash__particles">
+      <div class="splash__wave"></div>
+      <div class="splash__wave"></div>
+    </div>
     <div class="splash__logo">🌤️</div>
     <div class="splash__title">Weather Now</div>
+    <div class="splash__subtitle">Your live weather companion</div>
     <div class="splash__dots"><span></span><span></span><span></span></div>
   </div>
 
@@ -164,6 +215,12 @@
     <!-- Status messages -->
     <div class="status" id="status"></div>
 
+    <!-- Greeting -->
+    <div class="greeting" id="greeting" hidden>
+      <span class="greeting__emoji" id="greetEmoji">👋</span>
+      <span class="greeting__text" id="greetText">Hello!</span>
+    </div>
+
     <!-- Current summary -->
     <section class="current" id="current" hidden>
       <div class="current__left">
@@ -234,6 +291,12 @@
       </div>
     </section>
 
+    <!-- Weather tip -->
+    <section class="tip-card" id="tipCard" hidden>
+      <div class="tip-card__icon" id="tipIcon">💡</div>
+      <div class="tip-card__text" id="tipText">—</div>
+    </section>
+
     <footer class="footer">
       <p>Data by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a></p>
     </footer>
@@ -241,6 +304,20 @@
 
   <script src="script.js"></script>
   <script>
+    // Generate splash particles
+    (function() {
+      const pc = document.querySelector('.splash__particles');
+      if (!pc) return;
+      for (let i = 0; i < 15; i++) {
+        const p = document.createElement('div');
+        p.className = 'splash__particle';
+        p.style.left = Math.random() * 100 + '%';
+        p.style.top = Math.random() * 100 + '%';
+        p.style.animationDelay = (Math.random() * 3) + 's';
+        p.style.width = p.style.height = (3 + Math.random() * 4) + 'px';
+        pc.appendChild(p);
+      }
+    })();
     // Register the service worker so the app is installable & works offline.
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
