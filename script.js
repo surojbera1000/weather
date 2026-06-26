@@ -1013,6 +1013,93 @@ document.addEventListener("touchend", () => {
   }
 });
 
+// ===== Donate Modal =====
+const donateEls = {
+  btn: document.getElementById("donateBtn"),
+  modal: document.getElementById("donateModal"),
+  close: document.getElementById("donateClose"),
+  amountInput: document.getElementById("donateAmount"),
+  payBtn: document.getElementById("donatePayBtn"),
+  qrArea: document.getElementById("donateQR"),
+  qrImage: document.getElementById("qrImage"),
+  doneBtn: document.getElementById("donateDoneBtn"),
+  thanks: document.getElementById("donateThanks"),
+};
+const UPI_ID = "SurojSeller@fam";
+const UPI_NAME = "Weather Now";
+
+function openDonateModal() {
+  donateEls.modal.hidden = false;
+  donateEls.qrArea.hidden = true;
+  donateEls.thanks.hidden = true;
+  donateEls.amountInput.value = "";
+  donateEls.payBtn.disabled = true;
+  document.querySelectorAll(".amount-btn").forEach(b => b.classList.remove("is-active"));
+}
+function closeDonateModal() {
+  donateEls.modal.hidden = true;
+}
+
+donateEls.btn.addEventListener("click", openDonateModal);
+donateEls.close.addEventListener("click", closeDonateModal);
+donateEls.modal.addEventListener("click", (e) => {
+  if (e.target === donateEls.modal) closeDonateModal();
+});
+
+// Quick amount buttons
+document.querySelectorAll(".amount-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".amount-btn").forEach(b => b.classList.remove("is-active"));
+    btn.classList.add("is-active");
+    donateEls.amountInput.value = btn.dataset.amt;
+    donateEls.payBtn.disabled = false;
+  });
+});
+
+// Custom amount input
+donateEls.amountInput.addEventListener("input", () => {
+  const val = parseInt(donateEls.amountInput.value, 10);
+  donateEls.payBtn.disabled = !(val > 0);
+  document.querySelectorAll(".amount-btn").forEach(b => {
+    b.classList.toggle("is-active", b.dataset.amt === String(val));
+  });
+});
+
+// Generate QR
+donateEls.payBtn.addEventListener("click", () => {
+  const amount = parseInt(donateEls.amountInput.value, 10);
+  if (!amount || amount < 1) return;
+
+  // Build UPI deep link
+  const upiLink = `upi://pay?pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent(UPI_NAME)}&am=${amount}&cu=INR&tn=${encodeURIComponent("Donation to Weather Now")}`;
+
+  // Generate QR using a free API (no key needed)
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiLink)}`;
+  donateEls.qrImage.src = qrUrl;
+  donateEls.qrArea.hidden = false;
+  donateEls.payBtn.textContent = `₹${amount} — Scan QR below`;
+  donateEls.payBtn.disabled = true;
+
+  // Also try to open UPI app directly (works on mobile)
+  const openLink = document.createElement("a");
+  openLink.href = upiLink;
+  openLink.click();
+});
+
+// "I've paid" button → show thank you
+donateEls.doneBtn.addEventListener("click", () => {
+  donateEls.qrArea.hidden = true;
+  donateEls.thanks.hidden = false;
+  donateEls.payBtn.hidden = true;
+  // Auto-close after 4 seconds
+  setTimeout(() => {
+    closeDonateModal();
+    donateEls.payBtn.hidden = false;
+    donateEls.payBtn.textContent = "Generate QR & Pay";
+    donateEls.payBtn.disabled = true;
+  }, 4000);
+});
+
 // ===== Startup =====
 window.addEventListener("DOMContentLoaded", () => {
   els.autoLocToggle.checked = getAutoLoc();

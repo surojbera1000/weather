@@ -572,3 +572,230 @@ body.theme-light .forecast-btn:hover { background: rgba(0, 0, 0, 0.09); }
 }
 .tip-card__icon { font-size: 1.5rem; flex-shrink: 0; }
 .tip-card__text { font-size: 0.9rem; line-height: 1.5; color: var(--text-dim); }
+
+
+/* ===== Donate Section ===== */
+.donate {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 18px;
+  padding: 20px;
+  backdrop-filter: blur(10px);
+  animation: fadeIn 0.6s ease;
+}
+.donate__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.donate__emoji { font-size: 2rem; }
+.donate__title { font-size: 1.05rem; font-weight: 600; }
+.donate__sub { font-size: 0.82rem; color: var(--text-dim); margin-top: 2px; }
+.donate__btn {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+  border: none;
+  border-radius: 14px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 4px 16px rgba(238, 90, 36, 0.3);
+}
+.donate__btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(238, 90, 36, 0.4); }
+.donate__btn:active { transform: scale(0.97); }
+
+/* Donate Modal */
+.donate-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  animation: fadeIn 0.25s ease;
+}
+.donate-modal__box {
+  width: 100%;
+  max-width: 380px;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: #1a1f2e;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 22px;
+  padding: 26px 22px;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+body.theme-light .donate-modal__box {
+  background: #fff;
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  color: #1a2030;
+}
+.donate-modal__close {
+  position: absolute;
+  top: 14px; right: 16px;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 1.3rem;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.donate-modal__title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+.donate-modal__desc {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-bottom: 18px;
+}
+
+/* Quick amount buttons */
+.donate-modal__amounts {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.amount-btn {
+  padding: 10px 4px;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.amount-btn:hover, .amount-btn.is-active {
+  background: rgba(255, 107, 107, 0.15);
+  border-color: #ff6b6b;
+  color: #ff6b6b;
+}
+
+/* Custom amount */
+.donate-modal__custom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.donate-modal__rs {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+.donate-modal__input {
+  flex: 1;
+  padding: 12px 14px;
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  font-size: 1.1rem;
+  font-family: inherit;
+  outline: none;
+}
+body.theme-light .donate-modal__input {
+  background: rgba(0, 0, 0, 0.04);
+  color: #1a2030;
+  border-color: rgba(0, 0, 0, 0.12);
+}
+.donate-modal__input:focus { border-color: #ff6b6b; }
+
+/* Pay button */
+.donate-modal__pay {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+  border: none;
+  border-radius: 14px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s;
+}
+.donate-modal__pay:disabled { opacity: 0.4; cursor: not-allowed; }
+.donate-modal__pay:not(:disabled):active { transform: scale(0.97); }
+
+/* QR area */
+.donate-modal__qr {
+  text-align: center;
+  margin-top: 18px;
+  animation: fadeIn 0.4s ease;
+}
+.donate-modal__qr-img {
+  width: 200px;
+  height: 200px;
+  border-radius: 12px;
+  background: #fff;
+  padding: 8px;
+  margin: 0 auto 10px;
+  display: block;
+}
+.donate-modal__qr-info {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.donate-modal__upi {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-bottom: 14px;
+}
+.donate-modal__done {
+  padding: 12px 24px;
+  background: #34c759;
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.donate-modal__done:active { transform: scale(0.95); }
+
+/* Thank you */
+.donate-modal__thanks {
+  text-align: center;
+  padding: 20px 0;
+  animation: fadeIn 0.5s ease;
+}
+.donate-modal__thanks-emoji {
+  font-size: 3rem;
+  animation: pop 0.5s ease;
+}
+.donate-modal__thanks h4 {
+  font-size: 1.2rem;
+  margin: 12px 0 8px;
+  color: var(--text);
+}
+.donate-modal__thanks p {
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
+@keyframes pop {
+  0% { transform: scale(0.3); opacity: 0; }
+  60% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}

@@ -297,6 +297,56 @@
       <div class="tip-card__text" id="tipText">—</div>
     </section>
 
+    <!-- Donate section -->
+    <section class="donate" id="donateSection">
+      <div class="donate__header">
+        <span class="donate__emoji">❤️</span>
+        <div>
+          <h3 class="donate__title">Support This App</h3>
+          <p class="donate__sub">Help keep Weather Now free & ad-free!</p>
+        </div>
+      </div>
+      <button type="button" class="donate__btn" id="donateBtn">☕ Donate</button>
+
+      <!-- Donate modal (hidden by default) -->
+      <div class="donate-modal" id="donateModal" hidden>
+        <div class="donate-modal__box">
+          <button type="button" class="donate-modal__close" id="donateClose">✕</button>
+          <h3 class="donate-modal__title">☕ Support Weather Now</h3>
+          <p class="donate-modal__desc">Enter any amount (₹) to support development</p>
+
+          <div class="donate-modal__amounts">
+            <button type="button" class="amount-btn" data-amt="10">₹10</button>
+            <button type="button" class="amount-btn" data-amt="50">₹50</button>
+            <button type="button" class="amount-btn" data-amt="100">₹100</button>
+            <button type="button" class="amount-btn" data-amt="500">₹500</button>
+          </div>
+
+          <div class="donate-modal__custom">
+            <span class="donate-modal__rs">₹</span>
+            <input type="number" id="donateAmount" class="donate-modal__input" placeholder="Enter amount" min="1" />
+          </div>
+
+          <button type="button" class="donate-modal__pay" id="donatePayBtn" disabled>Generate QR & Pay</button>
+
+          <!-- QR Code area -->
+          <div class="donate-modal__qr" id="donateQR" hidden>
+            <img id="qrImage" class="donate-modal__qr-img" alt="UPI QR Code" />
+            <p class="donate-modal__qr-info">Scan with any UPI app (GPay, PhonePe, Paytm)</p>
+            <p class="donate-modal__upi">UPI: <strong>SurojSeller@fam</strong></p>
+            <button type="button" class="donate-modal__done" id="donateDoneBtn">✅ I've paid!</button>
+          </div>
+
+          <!-- Thank you message -->
+          <div class="donate-modal__thanks" id="donateThanks" hidden>
+            <div class="donate-modal__thanks-emoji">🎉</div>
+            <h4>Thank you so much! ❤️</h4>
+            <p>Your support means the world to us. Enjoy using Weather Now!</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <footer class="footer">
       <p>Data by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a></p>
     </footer>
