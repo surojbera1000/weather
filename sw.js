@@ -2,7 +2,7 @@
 // Caches the app shell so it loads offline. Live weather data is always
 // fetched from the network (it's never cached, so it stays current).
 
-const CACHE = "weather-now-v7";
+const CACHE = "weather-now-v8";
 const APP_SHELL = [
   "./",
   "./index.html",
